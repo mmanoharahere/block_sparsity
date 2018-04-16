@@ -146,7 +146,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--eval_dir',
       type=str,
-      default='/tmp/cifar10_eval',
+      default='./tmp/cifar10_eval',
       help='Directory where to write event logs.')
   parser.add_argument(
       '--eval_data',
@@ -156,7 +156,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--checkpoint_dir',
       type=str,
-      default='/tmp/cifar10_train',
+      default='./tmp/cifar10_train',
       help="""Directory where to read model checkpoints.""")
   parser.add_argument(
       '--eval_interval_secs',

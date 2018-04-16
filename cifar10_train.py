@@ -137,7 +137,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--train_dir',
       type=str,
-      default='/tmp/cifar10_train',
+      default='./tmp/cifar10_train',
       help='Directory where to write event logs and checkpoint.')
   parser.add_argument(
       '--pruning_hparams',
