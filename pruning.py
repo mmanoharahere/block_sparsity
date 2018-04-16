@@ -62,6 +62,8 @@ from __future__ import print_function
 
 import pruning_utils
 import core_layers as core
+import numpy as np
+import tensorflow as tf
 from tensorflow.contrib.training.python.training import hparam
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
@@ -387,9 +389,13 @@ class Pruning(object):
     Raises:
       ValueError: if block pooling function is not AVG or MAX
     """
-    squeezed_weights = array_ops.squeeze(weights)
-    if squeezed_weights.get_shape().ndims != 2 or self._block_dim == [1, 1]:
-      return self._update_mask(weights, threshold)
+    # squeezed_weights = array_ops.squeeze(weights)
+    if weights.get_shape().ndims != 2:
+        squeezed_weights = tf.reshape(weights, [weights.shape[0]*weights.shape[1]*weights.shape[2], weights.shape[-1]])
+    else:
+        squeezed_weights = weights
+    # if squeezed_weights.get_shape().ndims != 2 or self._block_dim == [1, 1]:
+    #   return self._update_mask(weights, threshold)
 
     if self._block_pooling_function not in ['AVG', 'MAX']:
       raise ValueError('Unknown pooling function for block sparsity: %s' %
@@ -413,19 +419,19 @@ class Pruning(object):
 
       smoothed_threshold, new_mask = self._update_mask(pooled_weights,
                                                        threshold)
-
       reshaped_mask = array_ops.reshape(
           new_mask,
           [pooled_weights.get_shape()[1],
            pooled_weights.get_shape()[2]])
+
       updated_mask = pruning_utils.kronecker_product(
           reshaped_mask, array_ops.ones(self._block_dim))
       sliced_mask = array_ops.slice(
           updated_mask, [0, 0],
           [squeezed_weights.get_shape()[0],
            squeezed_weights.get_shape()[1]])
-    return smoothed_threshold, array_ops.reshape(sliced_mask,
-                                                 array_ops.shape(weights))
+      return_mask= array_ops.reshape(sliced_mask,weights.shape)#array_ops.shape(weights))
+    return smoothed_threshold, return_mask
 
   def _get_mask_assign_ops(self):
     # Make sure the assignment ops have not already been added to the list
@@ -476,7 +482,6 @@ class Pruning(object):
           return control_flow_ops.no_op('mask_update')
 
   def conditional_mask_update_op(self):
-
     def maybe_update_masks():
       with ops.name_scope(self._spec.name):
         is_step_within_pruning_range = math_ops.logical_and(

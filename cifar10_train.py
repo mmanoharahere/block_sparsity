@@ -42,6 +42,7 @@ import argparse
 import datetime
 import sys
 import time
+import numpy as np
 
 
 import tensorflow as tf
@@ -86,6 +87,7 @@ def train():
     # Use the pruning_obj to add summaries to the graph to track the sparsity
     # of each of the layers
     pruning_obj.add_pruning_summaries()
+
 
     class _LoggerHook(tf.train.SessionRunHook):
       """Logs loss and runtime."""
