@@ -12,28 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""A binary to train pruned CIFAR-10 using a single GPU.
 
-Accuracy:
-cifar10_train.py achieves ~86% accuracy after 100K steps (256 epochs of
-data) as judged by cifar10_eval.py when target sparsity in
-cifar10_pruning_spec.pbtxt is set to zero
-
-Results:
-Sparsity | Accuracy after 150K steps
--------- | -------------------------
-0%       | 86%
-50%      | 86%
-75%      | TODO(suyoggupta)
-90%      | TODO(suyoggupta)
-95%      | 77%
-
-Usage:
-Please see the tutorial and website for how to download the CIFAR-10
-data set, compile the program and train the model.
-
-
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -43,34 +22,54 @@ import datetime
 import sys
 import time
 import numpy as np
-
+import os
+import gzip
+from six.moves import urllib
 
 import tensorflow as tf
 
-import  cifar10_pruning as cifar10
+import  LeNet_pruning as LeNet
 import pruning
+from datasets import mnist
+slim = tf.contrib.slim
 
 FLAGS = None
 
 
+
+
+
 def train():
-  """Train CIFAR-10 for a number of steps."""
+  """Train LeNet for a number of steps."""
   with tf.Graph().as_default():
     global_step = tf.contrib.framework.get_or_create_global_step()
 
-    # Get images and labels for CIFAR-10.
-    images, labels = cifar10.distorted_inputs()
+    dataset = mnist.get_split('train', './tmp/LeNet_data')
 
-    # Build a Graph that computes the logits predictions from the
-    # inference model.
-    logits = cifar10.inference(images)
+    # Creates a TF-Slim DataProvider which reads the dataset in the background
+    # during both training and testing.
+    provider = slim.dataset_data_provider.DatasetDataProvider(dataset,num_readers=10,shuffle=True)
+    image, label = provider.get(['image', 'label'])
+    # batch up some training data
+    images, labels = tf.train.batch([image, label],
+                                      batch_size=LeNet.BATCH_SIZE)
+    print (images.shape)
 
+
+    images = tf.cast(images, tf.float32)
+    # images=tf.transpose(images,[1,2,3,0])#tf.reshape(images,[28,28,1,64])
+    print (images.shape)
+    # labels=tf.reshape(labels,[128,])
+    # print (images.shape)
+    logits = LeNet.inference(images)
+    print ("logits shape:", logits.shape)
     # Calculate loss.
-    loss = cifar10.loss(logits, labels)
+    print ("label shape", labels.shape)
+    loss = LeNet.loss(logits, labels)
 
     # Build a Graph that trains the model with one batch of examples and
     # updates the model parameters.
-    train_op = cifar10.train(loss, global_step)
+    train_op = LeNet.train(loss, global_step)
 
     # Parse pruning hyperparameters
     pruning_hparams = pruning.get_pruning_hparams().parse(FLAGS.pruning_hparams)
@@ -127,7 +126,7 @@ def train():
 
 
 def main(argv=None):  # pylint: disable=unused-argument
-  cifar10.maybe_download_and_extract()
+  # LeNet.maybe_download_and_extract()
   if tf.gfile.Exists(FLAGS.train_dir):
     tf.gfile.DeleteRecursively(FLAGS.train_dir)
   tf.gfile.MakeDirs(FLAGS.train_dir)
@@ -139,7 +138,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--train_dir',
       type=str,
-      default='./tmp/cifar10_train',
+      default='./tmp/LeNet_train',
       help='Directory where to write event logs and checkpoint.')
   parser.add_argument(
       '--pruning_hparams',

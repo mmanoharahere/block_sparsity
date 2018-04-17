@@ -132,6 +132,12 @@ Eval:
 $ bazel-bin/$examples_dir/cifar10/cifar10_eval --run_once
 ```
 
+Example of training without bazel:
+
+```shell
+$ python cifar10_train.py --train_dir=tmp/cifar10_train/test/ --max_steps=50000 --pruning_hparams=name=cifar10_pruning,begin_pruning_step=1,end_pruning_step=10000,target_sparsity=0.9,sparsity_function_begin_step=1,sparsity_function_end_step=10000,block_height=8,block_width=32
+```
+
 ### Block Sparsity
 
 For some hardware architectures, it may be beneficial to induce spatially correlated sparsity. To train models in which the weight tensors have block sparse structure, set *block_height* and *block_width* hyperparameters to the desired block configuration (2x2, 4x4, 4x1, 1x8, etc). Currently, block sparsity is only supported for weight tensors which can be squeezed to rank 2. The matrix is partitioned into non-overlapping blocks of size *[block_height, block_dim]* and the either the average or max absolute value in this block is taken as a proxy for the entire block (set by *block_pooling_function* hyperparameter).

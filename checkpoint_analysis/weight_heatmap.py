@@ -60,15 +60,15 @@ def print_tensors_in_checkpoint_file(file_name, tensor_name, all_tensors,
       print("tensor_name: ", tensor_name)
       kernel = reader.get_tensor(tensor_name)
       print (kernel.shape)
-      kernel = np.swapaxes(kernel, 0, 2)
+      # kernel = np.swapaxes(kernel, 0, 2)
       print (kernel.shape)
       kernel= kernel.reshape(np.prod(kernel.shape[:-1]), kernel.shape[-1])
       print (kernel.shape)
       df = pd.DataFrame(kernel)
       df = df.abs()
-      df = df[0:64]
+      # df = df[96:105]
       # sns.heatmap(df, cmap="YlGnBu", center=0)#, vmin=0.1)
-      sns.heatmap(df, cmap="Blues", vmin=0.0, vmax=0.18)
+      sns.heatmap(df, cmap="Blues", vmin=0.0, vmax=0.3)
       # cmap = sns.cubehelix_palette(light=1, as_cmap=True)
       # sns.kdeplot(df, cmap=cmap, shade=True);
       # sns.palplot(sns.color_palette(df,"RdBu_r", 7))
