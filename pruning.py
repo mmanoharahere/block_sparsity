@@ -390,7 +390,9 @@ class Pruning(object):
       ValueError: if block pooling function is not AVG or MAX
     """
     # squeezed_weights = array_ops.squeeze(weights)
+
     if weights.get_shape().ndims != 2:
+        tf.transpose(weights,[2,1,0,3])
         squeezed_weights = tf.reshape(weights, [weights.shape[0]*weights.shape[1]*weights.shape[2], weights.shape[-1]])
     else:
         squeezed_weights = weights
