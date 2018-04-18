@@ -4,6 +4,20 @@ This document describes the API that facilitates magnitude-based pruning of
 neural network's weight tensors. The API helps inject necessary tensorflow op
 into the training graph so the model can be pruned while it is being trained.
 
+### Run with virtualenv
+```bash
+# Install
+sudo apt-get install python python-virtualenv
+virtualenv --system-site-packages ./
+source ./bin/activate
+easy_install -U pip
+pip install --upgrade tensorflow
+python -c 'import tensorflow as tf; print(tf.__version__)
+
+# Activate
+source ./bin/activate
+```
+
 ### Model creation
 
 The first step involves adding mask and threshold variables to the layers that
