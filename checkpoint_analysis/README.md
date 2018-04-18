@@ -10,7 +10,7 @@ $ python weight_heatmap.py --file_name=<checkpoint_name>.ckpt --all_tensor_names
 Run weight_heatmap.py:
 
 ```shell
-$ python weight_heatmap.py --file_name=<checkpoint_name>.ckpt --tensor_name=<tensor_name>
+$ python weight_heatmap.py --file_name=<checkpoint_name>.ckpt --tensor_name=<tensor_name> --mask=mask_name
 ```
 
 To get shapes of tensors:

@@ -34,7 +34,7 @@ from tensorflow.python.platform import flags
 FLAGS = None
 
 
-def print_tensors_in_checkpoint_file(file_name, tensor_name, all_tensors,
+def print_tensors_in_checkpoint_file(file_name, tensor_name, mask, all_tensors,
                                      all_tensor_names=False):
   """Prints tensors in a checkpoint file.
   If no `tensor_name` is provided, prints the tensor names and shapes
@@ -59,21 +59,17 @@ def print_tensors_in_checkpoint_file(file_name, tensor_name, all_tensors,
     else:
       print("tensor_name: ", tensor_name)
       kernel = reader.get_tensor(tensor_name)
+      mask = reader.get_tensor(mask)
       print (kernel.shape)
       # kernel = np.swapaxes(kernel, 0, 2)
       print (kernel.shape)
       kernel= kernel.reshape(np.prod(kernel.shape[:-1]), kernel.shape[-1])
+      mask= mask.reshape(np.prod(mask.shape[:-1]), mask.shape[-1])
       print (kernel.shape)
-      df = pd.DataFrame(kernel)
+      df = pd.DataFrame(np.multiply(kernel,mask))
       df = df.abs()
       # df = df[96:105]
-      # sns.heatmap(df, cmap="YlGnBu", center=0)#, vmin=0.1)
-      sns.heatmap(df, cmap="Blues", vmin=0.0, vmax=0.3)
-      # cmap = sns.cubehelix_palette(light=1, as_cmap=True)
-      # sns.kdeplot(df, cmap=cmap, shade=True);
-      # sns.palplot(sns.color_palette(df,"RdBu_r", 7))
-      # plt.imshow(df)
-      # plt.colorbar()
+      sns.heatmap(df, cmap="Blues", vmin=0.0, vmax=0.01)
       plt.show()
       # csv_file_name = tensor_name+".csv"
       # df.to_csv('vgg.csv',index=False)
@@ -128,12 +124,13 @@ def main(unused_argv):
   if not FLAGS.file_name:
     print("Usage: inspect_checkpoint --file_name=checkpoint_file_name "
           "[--tensor_name=tensor_to_print] "
+          "[--mask=mask_of the layer]"
           "[--all_tensors] "
           "[--all_tensor_names] "
           "[--printoptions]")
     sys.exit(1)
   else:
-    print_tensors_in_checkpoint_file(FLAGS.file_name, FLAGS.tensor_name,
+    print_tensors_in_checkpoint_file(FLAGS.file_name, FLAGS.tensor_name, FLAGS.mask,
                                      FLAGS.all_tensors, FLAGS.all_tensor_names)
 
 
@@ -149,6 +146,11 @@ if __name__ == "__main__":
       "shared prefix between all files in the checkpoint.")
   parser.add_argument(
       "--tensor_name",
+      type=str,
+      default="",
+      help="Name of the tensor to inspect")
+  parser.add_argument(
+      "--mask",
       type=str,
       default="",
       help="Name of the tensor to inspect")
