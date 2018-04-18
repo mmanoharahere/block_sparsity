@@ -50,7 +50,7 @@ IMAGE_SIZE = LeNet_input.IMAGE_SIZE
 NUM_CLASSES = LeNet_input.NUM_CLASSES
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = LeNet_input.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN  # pylint: disable=line-too-long
 NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = LeNet_input.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 DATA_DIR = './tmp/LeNet_data'
 
 # Constants describing the training process.
@@ -187,11 +187,11 @@ def inference(images):
   # While instantiating conv and local layers, we add mask and threshold
   # variables to the layer by calling the pruning.apply_mask() function.
   # Note that the masks are applied only to the weight tensors
+
   # conv1
   with tf.variable_scope('conv1') as scope:
-    kernel = tf.Variable(
-        tf.truncated_normal(
-        shape=[5, 5, 1, 32],stddev=0.1,seed=SEED))
+    kernel = _variable_with_weight_decay(
+        'weights', shape=[5, 5, 1, 32], stddev=5e-2, wd=0.0)
 
     conv = tf.nn.conv2d(
         images, pruning.apply_mask(kernel, scope), [1, 1, 1, 1], padding='SAME')
@@ -200,68 +200,67 @@ def inference(images):
     conv1 = tf.nn.tanh(pre_activation, name=scope.name)
     _activation_summary(conv1)
 
-      # pool1
-    pool1 = tf.nn.max_pool(
-          conv1,
-          ksize=[1, 2, 2, 1],
-          strides=[1, 2, 2, 1],
-          padding='SAME',
-          name='pool1')
-      # norm1
-      # norm1 = tf.nn.lrn(
-      #     pool1, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75, name='norm1')
+  # pool1
+  pool1 = tf.nn.max_pool(
+      conv1,
+      ksize=[1, 3, 3, 1],
+      strides=[1, 2, 2, 1],
+      padding='SAME',
+      name='pool1')
+  # norm1
+  norm1 = tf.nn.lrn(
+      pool1, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75, name='norm1')
 
-      # conv2
-    with tf.variable_scope('conv2') as scope:
-        kernel = tf.Variable(
-            tf.truncated_normal(
-            shape=[5, 5, 32, 64],stddev=0.1,seed=SEED))
-        conv = tf.nn.conv2d(
-            pool1, pruning.apply_mask(kernel, scope), [1, 1, 1, 1], padding='SAME')
-        biases = _variable_on_cpu('biases', [64], tf.constant_initializer(0.1))
-        pre_activation = tf.nn.bias_add(conv, biases)
-        conv2 = tf.nn.tanh(pre_activation, name=scope.name)
-        _activation_summary(conv2)
+  # conv2
+  with tf.variable_scope('conv2') as scope:
+    kernel = _variable_with_weight_decay(
+        'weights', shape=[5, 5, 32, 64], stddev=5e-2, wd=0.0)
+    conv = tf.nn.conv2d(
+        norm1, pruning.apply_mask(kernel, scope), [1, 1, 1, 1], padding='SAME')
+    biases = _variable_on_cpu('biases', [64], tf.constant_initializer(0.1))
+    pre_activation = tf.nn.bias_add(conv, biases)
+    conv2 = tf.nn.tanh(pre_activation, name=scope.name)
+    _activation_summary(conv2)
 
-      # norm2
-    norm2 = tf.nn.lrn(
+  # norm2
+  norm2 = tf.nn.lrn(
       conv2, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75, name='norm2')
-    # pool2
-    pool2 = tf.nn.max_pool(
+  # pool2
+  pool2 = tf.nn.max_pool(
       norm2,
-      ksize=[1, 2, 2, 1],
+      ksize=[1, 3, 3, 1],
       strides=[1, 2, 2, 1],
       padding='SAME',
       name='pool2')
 
-      # fc3
-    with tf.variable_scope('fc3') as scope:
+  # local3
+  with tf.variable_scope('fc3') as scope:
     # Move everything into depth so we can perform a single matrix multiply.
-        reshape = tf.reshape(pool2, [BATCH_SIZE, -1])
-        dim = reshape.get_shape()[1].value
-        weights = _variable_with_weight_decay(
-            'weights', shape=[dim, 512], stddev=0.04, wd=0.004)
-        biases = _variable_on_cpu('biases', [512], tf.constant_initializer(0.1))
-        local3 = tf.nn.relu(
-            tf.matmul(reshape, pruning.apply_mask(weights, scope)) + biases,
-            name=scope.name)
-        _activation_summary(local3)
-
+    reshape = tf.reshape(pool2, [BATCH_SIZE, -1])
+    dim = reshape.get_shape()[1].value
+    weights = _variable_with_weight_decay(
+        'weights', shape=[dim, 512], stddev=0.04, wd=0.004)
+    biases = _variable_on_cpu('biases', [512], tf.constant_initializer(0.1))
+    local3 = tf.nn.tanh(
+        tf.matmul(reshape, pruning.apply_mask(weights, scope)) + biases,
+        name=scope.name)
+    _activation_summary(local3)
 
   # linear layer(WX + b),
   # We don't apply softmax here because
   # tf.nn.sparse_softmax_cross_entropy_with_logits accepts the unscaled logits
   # and performs the softmax internally for efficiency.
-    with tf.variable_scope('softmax_linear') as scope:
-        weights = _variable_with_weight_decay(
-            'weights', [512, NUM_CLASSES], stddev=1 / 512.0, wd=0.0)
-        biases = _variable_on_cpu('biases', [NUM_CLASSES],
-                                  tf.constant_initializer(0.0))
-        softmax_linear = tf.add(
-            tf.matmul(local3, pruning.apply_mask(weights, scope)),
-            biases,
-            name=scope.name)
-        _activation_summary(softmax_linear)
+  with tf.variable_scope('softmax_linear') as scope:
+    weights = _variable_with_weight_decay(
+        'weights', [512, NUM_CLASSES], stddev=1 / 512.0, wd=0.0)
+    biases = _variable_on_cpu('biases', [NUM_CLASSES],
+                              tf.constant_initializer(0.0))
+    softmax_linear = tf.add(
+        tf.matmul(local3, pruning.apply_mask(weights, scope)),
+        biases,
+        name=scope.name)
+    _activation_summary(softmax_linear)
+
     return softmax_linear
 
 
