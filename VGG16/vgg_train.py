@@ -46,7 +46,6 @@ import numpy as np
 
 
 import tensorflow as tf
-
 import  vgg_pruning as vgg
 import pruning
 from datasets import imagenet
@@ -60,16 +59,15 @@ def train():
   with tf.Graph().as_default():
     global_step = tf.contrib.framework.get_or_create_global_step()
 
-    images, labels = vgg.distorted_inputs()
-    # dataset = imagenet.get_split('train', './tmp/vgg_data')
-    #
-    # # Creates a TF-Slim DataProvider which reads the dataset in the background
-    # # during both training and testing.
-    # provider = slim.dataset_data_provider.DatasetDataProvider(dataset,num_readers=10,shuffle=True)
-    # image, label = provider.get(['image', 'label'])
-    # # batch up some training data
-    # images, labels = tf.train.batch([image, label],
-    #                                   batch_size=LeNet.BATCH_SIZE)
+    # images, labels = vgg.distorted_inputs()
+    dataset = imagenet.get_split('train', './tmp/vgg_data')
+
+    # Creates a TF-Slim DataProvider which reads the dataset in the background
+    # during both training and testing.
+    provider = slim.dataset_data_provider.DatasetDataProvider(dataset,num_readers=10,shuffle=True)
+    image, label = provider.get(['image', 'label'])
+    # batch up some training data
+    images, labels = tf.train.batch([image, label], batch_size=32)
     print (images.shape)
 
 
@@ -186,7 +184,7 @@ def train():
 
 
 def main(argv=None):  # pylint: disable=unused-argument
-  vgg.maybe_download_and_extract()
+  # vgg.maybe_download_and_extract()
   if tf.gfile.Exists(FLAGS.train_dir):
     tf.gfile.DeleteRecursively(FLAGS.train_dir)
   tf.gfile.MakeDirs(FLAGS.train_dir)
