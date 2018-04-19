@@ -67,9 +67,9 @@ def train():
     # Creates a TF-Slim DataProvider which reads the dataset in the background
     # during both training and testing.
     provider = slim.dataset_data_provider.DatasetDataProvider(dataset,
-                                                              num_readers=40,
-                                                              common_queue_capacity=160*128,
-                                                              common_queue_min=80*128,
+                                                              num_readers=4,
+                                                              common_queue_capacity=20*32,
+                                                              common_queue_min=10*32,
                                                               shuffle=True)
 
 
@@ -79,11 +79,15 @@ def train():
                             is_training=True)
 
     [image, label] = provider.get(['image', 'label'])
-
     image = image_preprocessing_fn(image, 224, 224)
+    label -= 1
 
     # batch up some training data
-    images, labels = tf.train.batch([image, label], batch_size=128)
+    images, labels = tf.train.batch([image, label], 
+                                    batch_size=32,
+                                    num_threads=4,
+                                    capacity=5*32)
+
     print (images.shape)
 
 
@@ -99,6 +103,47 @@ def train():
     # Calculate loss.
     loss = vgg.loss(logits, labels)
 
+
+    # Save
+    list_var_names = [  'vgg_16/conv1/conv1_1/biases',
+                    	'vgg_16/conv1/conv1_1/weights',
+                    	'vgg_16/conv1/conv1_2/biases',
+                    	'vgg_16/conv1/conv1_2/weights',
+                    	'vgg_16/conv2/conv2_1/biases',
+                    	'vgg_16/conv2/conv2_1/weights',
+                    	'vgg_16/conv2/conv2_2/biases',
+                    	'vgg_16/conv2/conv2_2/weights',
+                    	'vgg_16/conv3/conv3_1/biases',
+                    	'vgg_16/conv3/conv3_1/weights',
+                    	'vgg_16/conv3/conv3_2/biases',
+                    	'vgg_16/conv3/conv3_2/weights',
+                    	'vgg_16/conv3/conv3_3/biases',
+                    	'vgg_16/conv3/conv3_3/weights',
+                    	'vgg_16/conv4/conv4_1/biases',
+                    	'vgg_16/conv4/conv4_1/weights',
+                    	'vgg_16/conv4/conv4_2/biases',
+                    	'vgg_16/conv4/conv4_2/weights',
+                    	'vgg_16/conv4/conv4_3/biases',
+                    	'vgg_16/conv4/conv4_3/weights',
+                    	'vgg_16/conv5/conv5_1/biases',
+                    	'vgg_16/conv5/conv5_1/weights',
+                    	'vgg_16/conv5/conv5_2/biases',
+                    	'vgg_16/conv5/conv5_2/weights',
+                    	'vgg_16/conv5/conv5_3/biases',
+                    	'vgg_16/conv5/conv5_3/weights',
+                    	'vgg_16/fc6/biases',
+                    	'vgg_16/fc6/weights',
+                    	'vgg_16/fc7/biases',
+                    	'vgg_16/fc7/weights',
+                    	'vgg_16/fc8/biases',
+                    	'vgg_16/fc8/weights']
+
+    var_list_to_restore = []
+ 
+    for name in list_var_names:
+        var_list_to_restore = var_list_to_restore + tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, name)
+
+    saver = tf.train.Saver(var_list_to_restore)
 
     # Build a Graph that trains the model with one batch of examples and
     # updates the model parameters.
@@ -145,54 +190,16 @@ def train():
           print(format_str % (datetime.datetime.now(), self._step, loss_value,
                               examples_per_sec, sec_per_batch))
 
-    list_var_names = [  'vgg_16/conv1/conv1_1/biases',
-                    	'vgg_16/conv1/conv1_1/weights',
-                    	'vgg_16/conv1/conv1_2/biases',
-                    	'vgg_16/conv1/conv1_2/weights',
-                    	'vgg_16/conv2/conv2_1/biases',
-                    	'vgg_16/conv2/conv2_1/weights',
-                    	'vgg_16/conv2/conv2_2/biases',
-                    	'vgg_16/conv2/conv2_2/weights',
-                    	'vgg_16/conv3/conv3_1/biases',
-                    	'vgg_16/conv3/conv3_1/weights',
-                    	'vgg_16/conv3/conv3_2/biases',
-                    	'vgg_16/conv3/conv3_2/weights',
-                    	'vgg_16/conv3/conv3_3/biases',
-                    	'vgg_16/conv3/conv3_3/weights',
-                    	'vgg_16/conv4/conv4_1/biases',
-                    	'vgg_16/conv4/conv4_1/weights',
-                    	'vgg_16/conv4/conv4_2/biases',
-                    	'vgg_16/conv4/conv4_2/weights',
-                    	'vgg_16/conv4/conv4_3/biases',
-                    	'vgg_16/conv4/conv4_3/weights',
-                    	'vgg_16/conv5/conv5_1/biases',
-                    	'vgg_16/conv5/conv5_1/weights',
-                    	'vgg_16/conv5/conv5_2/biases',
-                    	'vgg_16/conv5/conv5_2/weights',
-                    	'vgg_16/conv5/conv5_3/biases',
-                    	'vgg_16/conv5/conv5_3/weights',
-                    	'vgg_16/fc6/biases',
-                    	'vgg_16/fc6/weights',
-                    	'vgg_16/fc7/biases',
-                    	'vgg_16/fc7/weights',
-                    	'vgg_16/fc8/biases',
-                    	'vgg_16/fc8/weights']
-
-    var_list_to_restore = []
-    for name in list_var_names:
-        var_list_to_restore = var_list_to_restore + tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, name)
-
-    saver = tf.train.Saver(var_list_to_restore)
 
     with tf.train.MonitoredTrainingSession(
         checkpoint_dir=FLAGS.train_dir,
         hooks=[tf.train.StopAtStepHook(last_step=FLAGS.max_steps),
                tf.train.NanTensorHook(loss),
                _LoggerHook()],
-        config=tf.ConfigProto(
-            log_device_placement=FLAGS.log_device_placement)) as mon_sess:
+                config=tf.ConfigProto(
+                log_device_placement=FLAGS.log_device_placement)) as mon_sess:
 
-      # saver.restore(mon_sess,"vgg_16.ckpt")
+      saver.restore(mon_sess,"trained_weights/vgg_16.ckpt")
       while not mon_sess.should_stop():
         mon_sess.run(train_op)
         # Update the masks

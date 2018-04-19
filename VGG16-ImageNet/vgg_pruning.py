@@ -52,7 +52,7 @@ IMAGE_SIZE = vgg_input.IMAGE_SIZE
 NUM_CLASSES = vgg_input.NUM_CLASSES
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = vgg_input.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN  # pylint: disable=line-too-long
 NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = vgg_input.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
-BATCH_SIZE = 128
+BATCH_SIZE = 32
 DATA_DIR = './tmp/vgg_data'
 
 # Constants describing the training process.
@@ -371,10 +371,11 @@ def inference(images):
         reshape = tf.reshape(pool4, [BATCH_SIZE, -1])
         dim = reshape.get_shape()[1].value
         weights = _variable_with_weight_decay(
-            'weights', shape=[dim, 4096], stddev=0.04, wd=0.004)
+            'weights', shape=[7, 7, 512, 4096], stddev=0.04, wd=0.004)
         biases = _variable_on_cpu('biases', [4096], tf.constant_initializer(0.1))
+        weights2 = tf.reshape(weights, [dim, 4096]) 
         fc6 = tf.nn.tanh(
-            tf.matmul(reshape, pruning.apply_mask(weights, scope)) + biases,
+            tf.matmul(reshape, pruning.apply_mask(weights2, scope)) + biases,
             name=scope.name)
         _activation_summary(fc6)
 
@@ -383,10 +384,11 @@ def inference(images):
   # fc7
     with tf.variable_scope('fc7') as scope:
         weights = _variable_with_weight_decay(
-            'weights', shape=[4096, 4096], stddev=0.04, wd=0.004)
+            'weights', shape=[1, 1, 4096, 4096], stddev=0.04, wd=0.004)
         biases = _variable_on_cpu('biases', [4096], tf.constant_initializer(0.1))
+        weights2 = tf.reshape(weights, [4096, 4096])
         fc7 = tf.nn.tanh(
-            tf.matmul(fc6, pruning.apply_mask(weights, scope)) + biases,
+            tf.matmul(fc6, pruning.apply_mask(weights2, scope)) + biases,
             name=scope.name)
         _activation_summary(fc7)
 
@@ -399,11 +401,12 @@ def inference(images):
   # and performs the softmax internally for efficiency.
     with tf.variable_scope('fc8') as scope:
         weights = _variable_with_weight_decay(
-            'weights', [4096, NUM_CLASSES], stddev=1 / 192.0, wd=0.0)
+            'weights', [1, 1, 4096, NUM_CLASSES], stddev=1 / 192.0, wd=0.0)
         biases = _variable_on_cpu('biases', [NUM_CLASSES],
                                   tf.constant_initializer(0.0))
+        weights2 = tf.reshape(weights, [4096, NUM_CLASSES])
         softmax_linear = tf.add(
-            tf.matmul(fc7, pruning.apply_mask(weights, scope)),
+            tf.matmul(fc7, pruning.apply_mask(weights2, scope)),
             biases,
             name=scope.name)
         _activation_summary(softmax_linear)
@@ -495,18 +498,18 @@ def train(total_loss, global_step):
 
   # Compute gradients.
   with tf.control_dependencies([loss_averages_op]):
-    # opt = tf.train.GradientDescentOptimizer(lr)
+    opt = tf.train.GradientDescentOptimizer(lr)
     # opt = tf.train.AdamOptimizer(
     #     lr,
     #     beta1=0.9,
     #     beta2=0.999,
     #     epsilon=1.0)
-    opt=tf.train.FtrlOptimizer(
-        lr,
-        learning_rate_power=-0.5,
-        initial_accumulator_value=0.1,
-        l1_regularization_strength=0.01,
-        l2_regularization_strength=0.01)
+    #opt=tf.train.FtrlOptimizer(
+    #    lr,
+    #    learning_rate_power=-0.5,
+    #    initial_accumulator_value=0.1,
+    #    l1_regularization_strength=0.01,
+    #    l2_regularization_strength=0.01)
     # opt=optimizer = tf.train.MomentumOptimizer(
     #     lr,
     #     momentum=0.9,
