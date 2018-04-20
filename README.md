@@ -157,9 +157,6 @@ $ python vgg_eval.py --eval_dir ./vgg16_train_17apr_8x8/ --eval_data /data/ramya
 ```
 
 
-To run VGG, comment line 63 of vgg_train.py and uncomment line 64 to 72.
-In line 64, make sure that the direction points to where imagenet is.
-
 ### Block Sparsity
 
 For some hardware architectures, it may be beneficial to induce spatially correlated sparsity. To train models in which the weight tensors have block sparse structure, set *block_height* and *block_width* hyperparameters to the desired block configuration (2x2, 4x4, 4x1, 1x8, etc). Currently, block sparsity is only supported for weight tensors which can be squeezed to rank 2. The matrix is partitioned into non-overlapping blocks of size *[block_height, block_dim]* and the either the average or max absolute value in this block is taken as a proxy for the entire block (set by *block_pooling_function* hyperparameter).
