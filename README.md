@@ -154,6 +154,11 @@ $ bazel-bin/$examples_dir/cifar10/cifar10_eval --run_once
 Example of evaluation without bazel
 ```shell
 $ python vgg_eval.py --eval_dir ./vgg16_train_17apr_8x8/ --eval_data /data/ramyadML/TF-slim-data/imageNet/processed/ --checkpoint_dir ./vgg16_train_17apr_8x8/
+
+$ python cifar10_eval.py --eval_dir=tmp/cifar10_eval/ --eval_data=tmp/cifar10_data/ --checkpoint_dir=tmp/cifar10_train/cifar10_train_17apr_8x8/model.ckpt-98462 --run_once=RUN_ONCE
+
+$ python LeNet_eval.py --eval_dir=tmp/LeNet_eval/ --eval_data=tmp/LeNet_data/ --checkpoint_dir=tmp/LeNet_train/model.ckpt-3308 --run_once=RUN_ONCE
+
 ```
 
 
