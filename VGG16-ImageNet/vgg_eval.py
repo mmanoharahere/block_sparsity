@@ -42,7 +42,7 @@ import time
 import numpy as np
 import tensorflow as tf
 
-import LeNet_pruning as LeNet
+import vgg_pruning as vgg
 from datasets import imagenet
 slim = tf.contrib.slim
 
@@ -109,7 +109,7 @@ def evaluate():
     # Get images and labels for CIFAR-10.
     # eval_data = FLAGS.eval_data == 'test'
     # images, labels = LeNet.inputs(eval_data=eval_data)
-    dataset = imagenet.get_split('test', '/data/ramyadML/TF-slim-data/imageNet/processed')
+    dataset = imagenet.get_split('validation', '/data/ramyadML/TF-slim-data/imageNet/processed')
 
     # Creates a TF-Slim DataProvider which reads the dataset in the background
     # during both training and testing.
@@ -141,14 +141,14 @@ def evaluate():
     images = tf.cast(images, tf.float32)
     # Build a Graph that computes the logits predictions from the
     # inference model.
-    logits = LeNet.inference(images)
+    logits = vgg.inference(images)
 
     # Calculate predictions.
     top_k_op = tf.nn.in_top_k(logits, labels, 1)
 
     # Restore the moving average version of the learned variables for eval.
     variable_averages = tf.train.ExponentialMovingAverage(
-        LeNet.MOVING_AVERAGE_DECAY)
+        vgg.MOVING_AVERAGE_DECAY)
     variables_to_restore = variable_averages.variables_to_restore()
     saver = tf.train.Saver(variables_to_restore)
 
@@ -177,7 +177,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--eval_dir',
       type=str,
-      default='./tmp/LeNet_eval',
+      default='./tmp/vgg_eval',
       help='Directory where to write event logs.')
   parser.add_argument(
       '--eval_data',
@@ -187,7 +187,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--checkpoint_dir',
       type=str,
-      default='./tmp/LeNet_train',
+      default='./tmp/vgg_train',
       help="""Directory where to read model checkpoints.""")
   parser.add_argument(
       '--eval_interval_secs',
