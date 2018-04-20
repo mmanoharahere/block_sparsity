@@ -185,7 +185,23 @@ def evaluate():
                     	'vgg_16/fc7/biases',
                     	'vgg_16/fc7/weights',
                     	'vgg_16/fc8/biases',
-                    	'vgg_16/fc8/weights']
+                    	'vgg_16/fc8/weights'
+                        'vgg_16/conv1/conv1_1/mask',
+                        'vgg_16/conv1/conv1_2/mask',
+                        'vgg_16/conv2/conv2_1/mask',
+                        'vgg_16/conv2/conv2_2/mask',
+                        'vgg_16/conv3/conv3_1/mask',
+                        'vgg_16/conv3/conv3_2/mask',
+                        'vgg_16/conv3/conv3_3/mask',
+                        'vgg_16/conv4/conv4_1/mask',
+                        'vgg_16/conv4/conv4_2/mask',
+                        'vgg_16/conv4/conv4_3/mask',
+                        'vgg_16/conv5/conv5_1/mask',
+                        'vgg_16/conv5/conv5_2/mask',
+                        'vgg_16/conv5/conv5_3/mask',
+                        'vgg_16/fc6/mask',
+                        'vgg_16/fc7/mask',
+                        'vgg_16/fc8/mask']
 
     var_list_to_restore = []
 
