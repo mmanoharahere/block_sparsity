@@ -144,8 +144,12 @@ def evaluate():
     # inference model.
     logits = vgg.inference(images)
 
+    predictions = tf.argmax(logits, 1)
+    labels = tf.squeeze(labels)
+    top_k_op = slim.metrics.streaming_accuracy(predictions, labels)
+
     # Calculate predictions.
-    top_k_op = tf.nn.in_top_k(logits, labels, 1)
+    # top_k_op = tf.nn.in_top_k(logits, labels, 1)
 
     # # Restore the moving average version of the learned variables for eval.
     # variable_averages = tf.train.ExponentialMovingAverage(
