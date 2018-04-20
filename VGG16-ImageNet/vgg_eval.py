@@ -185,7 +185,7 @@ def evaluate():
                     	'vgg_16/fc7/biases',
                     	'vgg_16/fc7/weights',
                     	'vgg_16/fc8/biases',
-                    	'vgg_16/fc8/weights'
+                    	'vgg_16/fc8/weights',
                         'vgg_16/conv1/conv1_1/mask',
                         'vgg_16/conv1/conv1_2/mask',
                         'vgg_16/conv2/conv2_1/mask',
