@@ -15,11 +15,11 @@
 """Evaluation for CIFAR-10.
 
 Accuracy:
-vgg_train.py achieves 83.0% accuracy after 100K steps (256 epochs
-of data) as judged by vgg_eval.py.
+LeNet_train.py achieves 83.0% accuracy after 100K steps (256 epochs
+of data) as judged by LeNet_eval.py.
 
 Speed:
-On a single Tesla K40, vgg_train.py processes a single batch of 128 images
+On a single Tesla K40, LeNet_train.py processes a single batch of 128 images
 in 0.25-0.35 sec (i.e. 350 - 600 images /sec). The model reaches ~86%
 accuracy after 100K steps in 8 hours of training time.
 
@@ -42,7 +42,9 @@ import time
 import numpy as np
 import tensorflow as tf
 
-import vgg_pruning as vgg
+import LeNet_pruning as LeNet
+from datasets import imagenet
+slim = tf.contrib.slim
 
 FLAGS = None
 
@@ -58,16 +60,16 @@ def eval_once(saver, summary_writer, top_k_op, summary_op):
   """
   with tf.Session() as sess:
     ckpt = tf.train.get_checkpoint_state(FLAGS.checkpoint_dir)
-    if ckpt and ckpt.model_checkpoint_path:
+    # if ckpt and ckpt.model_checkpoint_path:
       # Restores from checkpoint
-      saver.restore(sess, ckpt.model_checkpoint_path)
+    saver.restore(sess, FLAGS.checkpoint_dir)
       # Assuming model_checkpoint_path looks something like:
-      #   /my-favorite-path/vgg_train/model.ckpt-0,
+      #   /my-favorite-path/LeNet_train/model.ckpt-0,
       # extract global_step from it.
-      global_step = ckpt.model_checkpoint_path.split('/')[-1].split('-')[-1]
-    else:
-      print('No checkpoint file found')
-      return
+    global_step = FLAGS.checkpoint_dir.split('/')[-1].split('-')[-1]
+    # else:
+    #   print('No checkpoint file found')
+    #   return
 
     # Start the queue runners.
     coord = tf.train.Coordinator()
@@ -105,19 +107,48 @@ def evaluate():
   """Eval CIFAR-10 for a number of steps."""
   with tf.Graph().as_default() as g:
     # Get images and labels for CIFAR-10.
-    eval_data = FLAGS.eval_data == 'test'
-    images, labels = vgg.inputs(eval_data=eval_data)
+    # eval_data = FLAGS.eval_data == 'test'
+    # images, labels = LeNet.inputs(eval_data=eval_data)
+    dataset = imagenet.get_split('test', '/data/ramyadML/TF-slim-data/imageNet/processed')
 
+    # Creates a TF-Slim DataProvider which reads the dataset in the background
+    # during both training and testing.
+    provider = slim.dataset_data_provider.DatasetDataProvider(dataset,
+                                                              num_readers=4,
+                                                              common_queue_capacity=20*32,
+                                                              common_queue_min=10*32,
+                                                              shuffle=True)
+
+
+    preprocessing_name = 'vgg_16'
+    image_preprocessing_fn = preprocessing_factory.get_preprocessing(
+                            preprocessing_name,
+                            is_training=True)
+
+    [image, label] = provider.get(['image', 'label'])
+    image = image_preprocessing_fn(image, 224, 224)
+    label -= 1
+
+    # batch up some training data
+    images, labels = tf.train.batch([image, label],
+                                    batch_size=32,
+                                    num_threads=4,
+                                    capacity=5*32)
+
+    print (images.shape)
+
+
+    images = tf.cast(images, tf.float32)
     # Build a Graph that computes the logits predictions from the
     # inference model.
-    logits = vgg.inference(images)
+    logits = LeNet.inference(images)
 
     # Calculate predictions.
     top_k_op = tf.nn.in_top_k(logits, labels, 1)
 
     # Restore the moving average version of the learned variables for eval.
     variable_averages = tf.train.ExponentialMovingAverage(
-        vgg.MOVING_AVERAGE_DECAY)
+        LeNet.MOVING_AVERAGE_DECAY)
     variables_to_restore = variable_averages.variables_to_restore()
     saver = tf.train.Saver(variables_to_restore)
 
@@ -134,7 +165,7 @@ def evaluate():
 
 
 def main(argv=None):  # pylint: disable=unused-argument
-  vgg.maybe_download_and_extract()
+  # LeNet.maybe_download_and_extract()
   if tf.gfile.Exists(FLAGS.eval_dir):
     tf.gfile.DeleteRecursively(FLAGS.eval_dir)
   tf.gfile.MakeDirs(FLAGS.eval_dir)
@@ -146,7 +177,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--eval_dir',
       type=str,
-      default='./tmp/vgg_eval',
+      default='./tmp/LeNet_eval',
       help='Directory where to write event logs.')
   parser.add_argument(
       '--eval_data',
@@ -156,7 +187,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--checkpoint_dir',
       type=str,
-      default='./tmp/vgg_train',
+      default='./tmp/LeNet_train',
       help="""Directory where to read model checkpoints.""")
   parser.add_argument(
       '--eval_interval_secs',
