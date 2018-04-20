@@ -140,17 +140,22 @@ $ bazel build -c opt $examples_dir/cifar10:cifar10_{train,eval}
 $ bazel-bin/$examples_dir/cifar10/cifar10_train --pruning_hparams=name=cifar10_pruning,begin_pruning_step=10000,end_pruning_step=100000,target_sparsity=0.9,sparsity_function_begin_step=10000,sparsity_function_end_step=100000
 ```
 
-Eval:
-
-```shell
-$ bazel-bin/$examples_dir/cifar10/cifar10_eval --run_once
-```
-
 Example of training without bazel:
 
 ```shell
 $ python cifar10_train.py --train_dir=tmp/cifar10_train/test/ --max_steps=50000 --pruning_hparams=name=cifar10_pruning,begin_pruning_step=1,end_pruning_step=10000,target_sparsity=0.9,sparsity_function_begin_step=1,sparsity_function_end_step=10000,block_height=8,block_width=32
 ```
+
+Eval:
+
+```shell
+$ bazel-bin/$examples_dir/cifar10/cifar10_eval --run_once
+```
+Example of evaluation without bazel
+```shell
+$ python vgg_eval.py --eval_dir ./vgg16_train_17apr_8x8/ --eval_data /data/ramyadML/TF-slim-data/imageNet/processed/ --checkpoint_dir ./vgg16_train_17apr_8x8/
+```
+
 
 To run VGG, comment line 63 of vgg_train.py and uncomment line 64 to 72.
 In line 64, make sure that the direction points to where imagenet is.
