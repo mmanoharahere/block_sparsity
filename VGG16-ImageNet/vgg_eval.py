@@ -147,11 +147,52 @@ def evaluate():
     # Calculate predictions.
     top_k_op = tf.nn.in_top_k(logits, labels, 1)
 
-    # Restore the moving average version of the learned variables for eval.
-    variable_averages = tf.train.ExponentialMovingAverage(
-        vgg.MOVING_AVERAGE_DECAY)
-    variables_to_restore = variable_averages.variables_to_restore()
-    saver = tf.train.Saver(variables_to_restore)
+    # # Restore the moving average version of the learned variables for eval.
+    # variable_averages = tf.train.ExponentialMovingAverage(
+    #     vgg.MOVING_AVERAGE_DECAY)
+    # variables_to_restore = variable_averages.variables_to_restore()
+    # saver = tf.train.Saver(variables_to_restore)
+
+    # Save
+    list_var_names = [  'vgg_16/conv1/conv1_1/biases',
+                    	'vgg_16/conv1/conv1_1/weights',
+                    	'vgg_16/conv1/conv1_2/biases',
+                    	'vgg_16/conv1/conv1_2/weights',
+                    	'vgg_16/conv2/conv2_1/biases',
+                    	'vgg_16/conv2/conv2_1/weights',
+                    	'vgg_16/conv2/conv2_2/biases',
+                    	'vgg_16/conv2/conv2_2/weights',
+                    	'vgg_16/conv3/conv3_1/biases',
+                    	'vgg_16/conv3/conv3_1/weights',
+                    	'vgg_16/conv3/conv3_2/biases',
+                    	'vgg_16/conv3/conv3_2/weights',
+                    	'vgg_16/conv3/conv3_3/biases',
+                    	'vgg_16/conv3/conv3_3/weights',
+                    	'vgg_16/conv4/conv4_1/biases',
+                    	'vgg_16/conv4/conv4_1/weights',
+                    	'vgg_16/conv4/conv4_2/biases',
+                    	'vgg_16/conv4/conv4_2/weights',
+                    	'vgg_16/conv4/conv4_3/biases',
+                    	'vgg_16/conv4/conv4_3/weights',
+                    	'vgg_16/conv5/conv5_1/biases',
+                    	'vgg_16/conv5/conv5_1/weights',
+                    	'vgg_16/conv5/conv5_2/biases',
+                    	'vgg_16/conv5/conv5_2/weights',
+                    	'vgg_16/conv5/conv5_3/biases',
+                    	'vgg_16/conv5/conv5_3/weights',
+                    	'vgg_16/fc6/biases',
+                    	'vgg_16/fc6/weights',
+                    	'vgg_16/fc7/biases',
+                    	'vgg_16/fc7/weights',
+                    	'vgg_16/fc8/biases',
+                    	'vgg_16/fc8/weights']
+
+    var_list_to_restore = []
+
+    for name in list_var_names:
+        var_list_to_restore = var_list_to_restore + tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, name)
+    saver = tf.train.Saver(var_list_to_restore)
+
 
     # Build the summary operation based on the TF collection of Summaries.
     summary_op = tf.summary.merge_all()
