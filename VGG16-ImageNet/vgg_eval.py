@@ -15,11 +15,11 @@
 """Evaluation for CIFAR-10.
 
 Accuracy:
-LeNet_train.py achieves 83.0% accuracy after 100K steps (256 epochs
-of data) as judged by LeNet_eval.py.
+vgg_train.py achieves 83.0% accuracy after 100K steps (256 epochs
+of data) as judged by vgg_eval.py.
 
 Speed:
-On a single Tesla K40, LeNet_train.py processes a single batch of 128 images
+On a single Tesla K40, vgg_train.py processes a single batch of 128 images
 in 0.25-0.35 sec (i.e. 350 - 600 images /sec). The model reaches ~86%
 accuracy after 100K steps in 8 hours of training time.
 
@@ -45,6 +45,7 @@ import tensorflow as tf
 import vgg_pruning as vgg
 from datasets import imagenet
 slim = tf.contrib.slim
+from preprocessing import preprocessing_factory
 
 FLAGS = None
 
@@ -64,7 +65,7 @@ def eval_once(saver, summary_writer, top_k_op, summary_op):
       # Restores from checkpoint
     saver.restore(sess, FLAGS.checkpoint_dir)
       # Assuming model_checkpoint_path looks something like:
-      #   /my-favorite-path/LeNet_train/model.ckpt-0,
+      #   /my-favorite-path/vgg_train/model.ckpt-0,
       # extract global_step from it.
     global_step = FLAGS.checkpoint_dir.split('/')[-1].split('-')[-1]
     # else:
@@ -108,7 +109,7 @@ def evaluate():
   with tf.Graph().as_default() as g:
     # Get images and labels for CIFAR-10.
     # eval_data = FLAGS.eval_data == 'test'
-    # images, labels = LeNet.inputs(eval_data=eval_data)
+    # images, labels = vgg.inputs(eval_data=eval_data)
     dataset = imagenet.get_split('validation', '/data/ramyadML/TF-slim-data/imageNet/processed')
 
     # Creates a TF-Slim DataProvider which reads the dataset in the background
@@ -165,7 +166,7 @@ def evaluate():
 
 
 def main(argv=None):  # pylint: disable=unused-argument
-  # LeNet.maybe_download_and_extract()
+  # vgg.maybe_download_and_extract()
   if tf.gfile.Exists(FLAGS.eval_dir):
     tf.gfile.DeleteRecursively(FLAGS.eval_dir)
   tf.gfile.MakeDirs(FLAGS.eval_dir)
