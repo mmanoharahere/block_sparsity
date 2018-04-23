@@ -16,10 +16,14 @@ def tsplit(string, delimiters):
     return stack
 
 
-path_to_watch = "."
+path_to_watch = "/data/ramyadML/scratch/block_sparsity/VGG16-ImageNet/"
 
+mask_mix = "python /data/ramyadML/scratch/block_sparsity/checkpoint_analysis/save_masked_vgg.py --all_tensors "
 eval_slim = "python /data/ramyadML/scratch/tensorflow-models/research/slim/eval_image_classifier.py --dataset_dir=/data/ramyadML/TF-slim-data/imageNet/processed/ --eval_dir=/tmp/tmp --model_name=vgg_16 --dataset_split_name=validation --labels_offset=1 "
-checkpoint_dir="monitor_base"
+#### UPDATE
+checkpoint_dir="vgg16_apr23_monitor"
+
+path_to_watch = path_to_watch + checkpoint_dir
 
 checkpoint_analysis = "python /data/ramyadML/scratch/block_sparsity/checkpoint_analysis/weight_heatmap.py "
 
@@ -61,15 +65,23 @@ while 1:
                     print "CHECKPOINT:" + checkpoint[2]
                     filename="model.ckpt-"+checkpoint[2]
                     print "FILENAME:" + filename
+
+                    #Mix Masks
+                    command_mix = mask_mix + " --file_name=/data/ramyadML/scratch/block_sparsity/VGG16-ImageNet/" + checkpoint_dir + "/" + filename
+                    print "COMMAND:" + command_mix
+                    os.system(command_mix)
+
                     #Eval Part
-                    command_eval = eval_slim + " --checkpoint_path=/data/ramyadML/scratch/block_sparsity/VGG16-ImageNet/" + checkpoint_dir + "/" + filename
+                    command_eval = eval_slim + " --checkpoint_path=/tmp/model_ckpt_masked"
                     eval_log_filename = " 2>&1 | tee log_eval_" + checkpoint[2] + ".log"
+                    print "COMMAND:" + command_eval + eval_log_filename
                     os.system(command_eval + eval_log_filename) 
 
                     #Checkpoint analysis part
                     for layer in vgg_layers:
                         command_analysis = checkpoint_analysis + " --file_name=/data/ramyadML/scratch/block_sparsity/VGG16-ImageNet/" + checkpoint_dir + "/" + filename  + " --tensor_name=" + layer + "weights" + " --mask=" + layer + "mask"
                         command_analysis_log = " 2>&1 | tee -a log_analysis_" + checkpoint[2] + ".log"
+                        print "COMMAND:" + command_analysis + command_analysis_log
                         os.system(command_analysis + command_analysis_log)
 
 
